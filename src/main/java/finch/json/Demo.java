@@ -63,5 +63,10 @@ public class Demo {
 
     A a = json(b).set("a", "" + b.getB()).as(A.class);
     System.out.println("a=" + a);
+
+    Json j = json();
+    j.select("a.b").get(2).set("hello");
+    j.select("a.b").get(1).set("world");
+    System.out.println("j=" + j.toPretty());
   }
 }
