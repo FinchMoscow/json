@@ -16,7 +16,8 @@ public class JDeserializers extends com.fasterxml.jackson.databind.deser.Deseria
   public JsonDeserializer<?> findBeanDeserializer(JavaType type, DeserializationConfig config, BeanDescription beanDesc) throws JsonMappingException {
     try {
       Constructor<?> constructor = type.getRawClass().getConstructor(Json.class);
-      new JsonDeserializer<Object>() {
+
+      return new JsonDeserializer<Object>() {
         @Override
         public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
           try {
