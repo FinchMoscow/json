@@ -2,6 +2,8 @@ package finch.json;
 
 import org.junit.Test;
 
+import java.util.Map;
+
 import static finch.json.Json.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,5 +42,24 @@ public class JsonTest {
     assertTrue(filter.get("b").get(0).get("b").isNumber());
     assertTrue(filter.get("b").get(1).get("a").isNull());
     assertTrue(filter.get("b").get(1).get("b").isNumber());
+  }
+
+  @Test
+  public void asMap() {
+    Json json = json()
+      .set("a", 1)
+      .set("b", json()
+        .add(json()
+          .set("a", 1)
+          .set("b", 1)
+        )
+        .add(json()
+          .set("a", 2)
+          .set("b", 2)
+        )
+      );
+    Map<String, Json> map = json.as(Map.class, String.class, Json.class);
+    Map<String, Integer> b = map.get("b").get(0).as(Map.class, String.class, Integer.class);
+    assertEquals(1, b.get("a").intValue());
   }
 }
