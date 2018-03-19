@@ -14,9 +14,13 @@ import finch.json.jackson.JModule;
 import finch.json.jackson.JSerializer;
 import lombok.SneakyThrows;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @JsonSerialize(using = JSerializer.class)
 @JsonDeserialize(using = JDeserialize.class)
@@ -97,25 +101,6 @@ public class Json implements Iterable<Json> {
     return jsonNode.isBoolean();
   }
 
-  public Json select(String path) {
-    return selectByPath(Arrays.asList(path.split("\\.")));
-  }
-
-  private Json selectByPath(Iterable<String> path) {
-    return selectByPath(path.iterator());
-  }
-
-  private Json selectByPath(Iterator<String> path) {
-    if (!path.hasNext())
-      return this;
-    String next = path.next();
-    if (next.charAt(0) >= '1' && next.charAt(0) <= '0') {
-      int i = Integer.valueOf(next);
-      return get(i).selectByPath(path);
-    }
-    return get(next).selectByPath(path);
-  }
-
   public Json get(int i) {
     JsonNode nextElement = NullNode.getInstance();
     if (isArray() && arrayNode().size() > 0)
@@ -176,28 +161,51 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
-  private void updateElement(JsonNode newJsonNode) {
-    if (parent != null) {
-      if (path instanceof String) {
-        parent.set((String) path, newJsonNode);
-        newJsonNode = parent.get((String) path).jsonNode;
-      } else {
-        parent.set((Integer) path, newJsonNode);
-        newJsonNode = parent.get((Integer) path).jsonNode;
-      }
-    }
-    this.jsonNode = newJsonNode;
+  public Json filter(BiFunction<String, Json, Boolean> fn) {
+    return filter(fn, true);
   }
 
-  private JsonNode valueToTree(Object value) {
-    if (value == null) {
-      return NullNode.getInstance();
-    }
-    if (value instanceof Json) {
-      return ((Json) value).jsonNode();
-    }
-    return OBJECT_MAPPER.valueToTree(value);
+  public Json filter(BiFunction<String, Json, Boolean> fn, boolean recursive) {
+    return map((k, v) -> fn.apply(k, v) ? v : null, recursive);
   }
+
+  public Json filter(String fields) {
+    Set<String> fieldSet = Stream.of(fields.split("\\s*,\\s*")).collect(Collectors.toSet());
+    return filter((s, json) -> fieldSet.contains(s));
+  }
+
+  public Json map(BiFunction<String, Json, Object> fn) {
+    return map(fn, true);
+  }
+
+  public Json map(BiFunction<String, Json, Object> fn, boolean recursive) {
+    return map(fn, recursive, "");
+  }
+
+  public Json map(BiFunction<String, Json, Object> fn, boolean recursive, String path) {
+    if (isArray()) {
+      Json json = json();
+      for (Json el : this) {
+        if (!el.isNull()) {
+          json.add(recursive ? el.map(fn, true, path) : fn.apply(path, el));
+        }
+      }
+      return json;
+    }
+    if (isObject()) {
+      Json json = json();
+      for (String k : this.keySet()) {
+        Json old = get(k);
+        Json el = recursive ? old.map(fn, true, path.length() > 0 ? path + "." + k : k) : json(fn.apply(path, old));
+        if (!el.isNull()) {
+          json.set(k, el);
+        }
+      }
+      return json;
+    }
+    return json(fn.apply(path, this));
+  }
+
 
   @Override
   public Iterator<Json> iterator() {
@@ -234,11 +242,11 @@ public class Json implements Iterable<Json> {
   }
 
   public int size() {
-    return arrayNode().size();
+    return isArray() ? arrayNode().size() : 0;
   }
 
   public boolean isEmpty() {
-    return isArray() ? arrayNode().size() == 0 : (isObject() ? keySet().size() == 0 : (!isString() || asString().isEmpty()));
+    return isArray() ? arrayNode().size() == 0 : (isObject() ? objectNode().fields().hasNext() : (!isString() || asString().isEmpty()));
   }
 
 
@@ -248,61 +256,6 @@ public class Json implements Iterable<Json> {
 
   private ObjectNode objectNode() {
     return (ObjectNode) jsonNode;
-  }
-
-  public Json filter(BiFunction<String, Json, Boolean> fn) {
-    return map((k, v) -> fn.apply(k, v) ? v : null, "");
-  }
-
-  public Json map(BiFunction<String, Json, Object> fn) {
-    return map(fn, "");
-  }
-
-  public Json map(BiFunction<String, Json, Object> fn, String path) {
-    if (isArray()) {
-      Json json = json();
-      for (Json el : this) {
-        if (!el.isNull()) {
-          json.add(el.map(fn, path));
-        }
-      }
-      return json;
-    }
-    if (isObject()) {
-      Json json = json();
-      for (String k : this.keySet()) {
-        Json old = get(k);
-        Json el = old.map(fn, path.length() > 0 ? path + "." + k : k);
-        if (!el.isNull()) {
-          json.set(k, el);
-        }
-      }
-      return json;
-    }
-    return json(fn.apply(path, this));
-  }
-
-  public Json mapValues(Function<Json, Object> fn, boolean recursive) {
-    if (isArray()) {
-      Json json = array();
-      for (Json el : this) {
-        json.add(recursive ? el.mapValues(fn, true) : fn.apply(el));
-      }
-      return json;
-    }
-    if (isObject()) {
-      Json json = object();
-      for (String k : this.keySet()) {
-        Json el = get(k);
-        json.set(k, recursive ? el.mapValues(fn, true) : fn.apply(el));
-      }
-      return json;
-    }
-    return json(fn.apply(this));
-  }
-
-  public Json mapValues(Function<Json, Boolean> filter, Function<Json, Object> fn, boolean recursive) {
-    return mapValues(json -> filter.apply(json) ? fn.apply(json) : json, recursive);
   }
 
   @Override
@@ -320,28 +273,16 @@ public class Json implements Iterable<Json> {
     if (type.isAssignableFrom(Json.class)) {
       return (T) this;
     }
-    return OBJECT_MAPPER.readValue(OBJECT_MAPPER.treeAsTokens(jsonNode), OBJECT_MAPPER.getTypeFactory().constructParametricType(type, parameterClasses));
-  }
-
-  @SneakyThrows
-  public <T> T as(Class<T> type) {
-    if (type.isAssignableFrom(Json.class)) {
-      return (T) this;
+    if (parameterClasses.length == 0) {
+      return (T) OBJECT_MAPPER.readValue(OBJECT_MAPPER.treeAsTokens(jsonNode), type);
     }
-    return OBJECT_MAPPER.readValue(OBJECT_MAPPER.treeAsTokens(jsonNode), type);
+    return OBJECT_MAPPER.readValue(OBJECT_MAPPER.treeAsTokens(jsonNode), OBJECT_MAPPER.getTypeFactory().constructParametricType(type, parameterClasses));
   }
 
   public Number asNumber(Number value) {
     return isNumber() ? as(Number.class) : (isString() ? parseDouble(asString(), value) : null);
   }
 
-  private double parseDouble(String s, Number value) {
-    try {
-      return Double.valueOf(s);
-    } catch (NumberFormatException ignored) {
-      return value.doubleValue();
-    }
-  }
 
   public int asInt() {
     return asInt(0);
@@ -351,25 +292,11 @@ public class Json implements Iterable<Json> {
     return isNumber() ? as(Integer.class) : (isString() ? parseInt(asString(), value) : value);
   }
 
-  private int parseInt(String s, int value) {
-    try {
-      return Integer.valueOf(s);
-    } catch (NumberFormatException ignored) {
-      return value;
-    }
-  }
 
   public long asLong(long value) {
     return isNumber() ? as(Long.class) : (isString() ? parseLong(asString(), value) : value);
   }
 
-  private long parseLong(String s, long value) {
-    try {
-      return Long.valueOf(s);
-    } catch (NumberFormatException ignored) {
-      return value;
-    }
-  }
 
   public String asString() {
     return asString("");
@@ -386,4 +313,53 @@ public class Json implements Iterable<Json> {
   public boolean asBoolean(boolean value) {
     return isBoolean() ? as(Boolean.class) : value;
   }
+
+  private void updateElement(JsonNode newJsonNode) {
+    if (parent != null) {
+      if (path instanceof String) {
+        parent.set((String) path, newJsonNode);
+        newJsonNode = parent.get((String) path).jsonNode;
+      } else {
+        parent.set((Integer) path, newJsonNode);
+        newJsonNode = parent.get((Integer) path).jsonNode;
+      }
+    }
+    this.jsonNode = newJsonNode;
+  }
+
+  private JsonNode valueToTree(Object value) {
+    if (value == null) {
+      return NullNode.getInstance();
+    }
+    if (value instanceof Json) {
+      return ((Json) value).jsonNode();
+    }
+    return OBJECT_MAPPER.valueToTree(value);
+  }
+
+  private int parseInt(String s, int value) {
+    try {
+      return Integer.valueOf(s);
+    } catch (NumberFormatException ignored) {
+      return value;
+    }
+  }
+
+  private long parseLong(String s, long value) {
+    try {
+      return Long.valueOf(s);
+    } catch (NumberFormatException ignored) {
+      return value;
+    }
+  }
+
+  private double parseDouble(String s, Number value) {
+    try {
+      return Double.valueOf(s);
+    } catch (NumberFormatException ignored) {
+      return value.doubleValue();
+    }
+  }
+
+
 }
