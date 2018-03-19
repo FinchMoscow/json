@@ -49,17 +49,11 @@ public class JsonTest {
     Json json = json()
       .set("a", 1)
       .set("b", json()
-        .add(json()
-          .set("a", 1)
-          .set("b", 1)
-        )
-        .add(json()
-          .set("a", 2)
-          .set("b", 2)
-        )
+        .set("a", 1)
+        .set("b", 1)
       );
     Map<String, Json> map = json.as(Map.class, String.class, Json.class);
-    Map<String, Integer> b = map.get("b").get(0).as(Map.class, String.class, Integer.class);
-    assertEquals(1, b.get("a").intValue());
+    Map<String, String> b = map.get("b").as(Map.class, String.class, String.class);
+    assertEquals("1", b.get("a"));
   }
 }
