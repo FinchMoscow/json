@@ -101,6 +101,22 @@ public class Json implements Iterable<Json> {
     return jsonNode.isBoolean();
   }
 
+  public Json select(String path) {
+    return select((Object[]) path.split("\\."));
+  }
+
+  public Json select(Object... path) {
+    Json j = this;
+    for (Object p : path) {
+      if (p instanceof Number) {
+        j = j.get(((Number) p).intValue());
+      } else {
+        j = j.get((String) p);
+      }
+    }
+    return j;
+  }
+
   public Json get(int i) {
     JsonNode nextElement = NullNode.getInstance();
     if (isArray() && arrayNode().size() > 0)
