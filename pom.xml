@@ -49,7 +49,6 @@
     </dependency>
   </dependencies>
 
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -78,6 +77,18 @@
       <releases><enabled>true</enabled></releases>
       <snapshots><enabled>false</enabled></snapshots>
     </repository>
-
   </repositories>
+  
+   <distributionManagement>
+        <repository>
+            <id>morphine.nexus.release</id>
+            <name>Internal Releases</name>
+            <url>https://nexus.finch.fm/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>morphine.nexus.snapshot</id>
+            <name>Internal Releases</name>
+            <url>https://nexus.finch.fm/repository/maven-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
