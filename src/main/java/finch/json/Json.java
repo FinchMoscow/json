@@ -28,6 +28,7 @@ public class Json implements Iterable<Json> {
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
     .registerModule(new JModule())
     .findAndRegisterModules()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
     .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
   private final Json parent;
