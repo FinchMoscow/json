@@ -15,7 +15,7 @@ public class PathJson {
     PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
     String root = pathMatchingResourcePatternResolver.getResource(locationPattern).getURI().toString();
     Json json = Json.json();
-    for (Resource resource : pathMatchingResourcePatternResolver.getResources(locationPattern + "/*/*.json")) {
+    for (Resource resource : pathMatchingResourcePatternResolver.getResources(locationPattern + "/**/*.json")) {
       String path = jsonPath(root, resource);
       Json value = Json.parse(new String(Files.readAllBytes(resource.getFile().toPath())));
       json.select(path).set(value);

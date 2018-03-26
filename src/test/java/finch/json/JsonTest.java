@@ -36,7 +36,7 @@ public class JsonTest {
           .set("b", 2)
         )
       );
-    Json filter = json.filter("b.b, a");
+    Json filter = json.filterFields("b.b, a");
     assertTrue(filter.get("a").isNumber());
     assertTrue(filter.get("b").get(0).get("a").isNull());
     assertTrue(filter.get("b").get(0).get("b").isNumber());
@@ -55,5 +55,29 @@ public class JsonTest {
     Map<String, Json> map = json.as(Map.class, String.class, Json.class);
     Map<String, String> b = map.get("b").as(Map.class, String.class, String.class);
     assertEquals("1", b.get("a"));
+  }
+
+  @Test
+  public void update() {
+    Json json = json()
+      .set("a", 1)
+      .set("b", json()
+        .set("a", 1)
+        .set("b", 1)
+      );
+    System.out.println(json.toPretty());
+    json.update(
+      json()
+        .set("$set",
+          json()
+            .set("c.d", 1)
+        )
+    );
+    System.out.println(json.toPretty());
+  }
+
+  @Test
+  public void castToString() {
+    assertEquals("1", json(1).asString());
   }
 }

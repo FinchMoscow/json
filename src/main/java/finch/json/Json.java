@@ -9,15 +9,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Streams;
 import finch.json.jackson.JDeserialize;
 import finch.json.jackson.JModule;
 import finch.json.jackson.JSerializer;
 import lombok.SneakyThrows;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,6 +52,10 @@ public class Json implements Iterable<Json> {
 
   public static Json json(Object o) {
     return new Json(OBJECT_MAPPER.valueToTree(o));
+  }
+
+  public static Json json(String key, Object o) {
+    return object().set(key, o);
   }
 
   public static Json object() {
@@ -177,17 +179,17 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
-  public Json filter(BiFunction<String, Json, Boolean> fn) {
-    return filter(fn, true);
+  public Json filterFields(BiFunction<String, Json, Boolean> fn) {
+    return filterFields(fn, true);
   }
 
-  public Json filter(BiFunction<String, Json, Boolean> fn, boolean recursive) {
+  public Json filterFields(BiFunction<String, Json, Boolean> fn, boolean recursive) {
     return map((k, v) -> fn.apply(k, v) ? v : null, recursive);
   }
 
-  public Json filter(String fields) {
+  public Json filterFields(String fields) {
     Set<String> fieldSet = Stream.of(fields.split("\\s*,\\s*")).collect(Collectors.toSet());
-    return filter((s, json) -> fieldSet.contains(s));
+    return filterFields((s, json) -> fieldSet.contains(s));
   }
 
   public Json map(BiFunction<String, Json, Object> fn) {
@@ -222,6 +224,24 @@ public class Json implements Iterable<Json> {
     return json(fn.apply(path, this));
   }
 
+  public Json update(Json operations) {
+    operations.fields().forEach(opField -> {
+      if ("$set".equals(opField.getKey())) {
+        opField.getValue()
+          .fields()
+          .forEach(setField ->
+            select(setField.getKey())
+              .set(setField.getValue())
+          );
+      }
+    });
+
+    return this;
+  }
+
+  public Stream<Map.Entry<String, Json>> fields() {
+    return Streams.stream(jsonNode.fields()).map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), new Json(e.getValue(), Json.this, e.getKey())));
+  }
 
   @Override
   public Iterator<Json> iterator() {
@@ -319,6 +339,9 @@ public class Json implements Iterable<Json> {
   }
 
   public String asString(String value) {
+    if(isNumber()) {
+      return asNumber(0).toString();
+    }
     return isString() ? as(String.class) : value;
   }
 
