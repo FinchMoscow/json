@@ -80,4 +80,16 @@
     </repository>
 
   </repositories>
+
+  <distributionManagement>
+    <repository>
+      <id>morphine.nexus.release</id>
+      <url>http://nexus.finch.fm/repository/maven-releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>morphine.nexus.snapshot</id>
+      <url>http://nexus.finch.fm/repository/maven-snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
+
 </project>
