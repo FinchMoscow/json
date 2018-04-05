@@ -5,6 +5,7 @@ import lombok.SneakyThrows;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.stream.Collectors;
@@ -17,7 +18,8 @@ public class PathJson {
     Json json = Json.json();
     for (Resource resource : pathMatchingResourcePatternResolver.getResources(locationPattern + "/**/*.json")) {
       String path = jsonPath(root, resource);
-      Json value = Json.parse(new String(Files.readAllBytes(resource.getFile().toPath())));
+
+      Json value = Json.parse(new String(new BufferedInputStream(resource.getInputStream()).readAllBytes()));
       json.select(path).set(value);
     }
     return json;
