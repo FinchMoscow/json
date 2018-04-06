@@ -179,7 +179,12 @@ public class Json implements Iterable<Json> {
     if (!isObject()) {
       updateElement(OBJECT_MAPPER.createObjectNode());
     }
-    objectNode().set(prop, valueToTree(value));
+    JsonNode value1 = valueToTree(value);
+    if(value1.isMissingNode()) {
+      objectNode().remove(prop);
+    } else {
+      objectNode().set(prop, value1);
+    }
     return this;
   }
 
