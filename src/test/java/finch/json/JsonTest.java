@@ -35,12 +35,14 @@ public class JsonTest {
           .set("a", 2)
           .set("b", 2)
         )
-      );
+      )
+      .set("c", json().add(1).add("a"));
     Json filter = json.filterFields("b.b, a");
+    System.out.println(filter.toPretty());
     assertTrue(filter.get("a").isNumber());
-    assertTrue(filter.get("b").get(0).get("a").isNull());
+    assertTrue(filter.get("b").get(0).get("a").isMissing());
     assertTrue(filter.get("b").get(0).get("b").isNumber());
-    assertTrue(filter.get("b").get(1).get("a").isNull());
+    assertTrue(filter.get("b").get(1).get("a").isMissing());
     assertTrue(filter.get("b").get(1).get("b").isNumber());
   }
 
@@ -57,24 +59,6 @@ public class JsonTest {
     assertEquals("1", b.get("a"));
   }
 
-  @Test
-  public void update() {
-    Json json = json()
-      .set("a", 1)
-      .set("b", json()
-        .set("a", 1)
-        .set("b", 1)
-      );
-    System.out.println(json.toPretty());
-    json.update(
-      json()
-        .set("$set",
-          json()
-            .set("c.d", 1)
-        )
-    );
-    System.out.println(json.toPretty());
-  }
 
   @Test
   public void castToString() {

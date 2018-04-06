@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Streams;
@@ -48,10 +49,17 @@ public class Json implements Iterable<Json> {
   }
 
   public static Json json() {
-    return json(null);
+    return missing();
+  }
+
+  public static Json missing() {
+    return new Json(MissingNode.getInstance());
   }
 
   public static Json json(Object o) {
+    if(o instanceof Json) {
+      return (Json) o;
+    }
     return new Json(OBJECT_MAPPER.valueToTree(o));
   }
 
@@ -104,6 +112,10 @@ public class Json implements Iterable<Json> {
     return jsonNode.isBoolean();
   }
 
+  public boolean isMissing() {
+    return jsonNode.isMissingNode();
+  }
+
   public Json select(String path) {
     return select((Object[]) path.split("\\."));
   }
@@ -121,14 +133,14 @@ public class Json implements Iterable<Json> {
   }
 
   public Json get(int i) {
-    JsonNode nextElement = NullNode.getInstance();
+    JsonNode nextElement = MissingNode.getInstance();
     if (isArray() && arrayNode().size() > 0)
       nextElement = arrayNode().get(i);
     return new Json(nextElement, this, i);
   }
 
   public Json get(String prop) {
-    JsonNode nextElement = NullNode.getInstance();
+    JsonNode nextElement = MissingNode.getInstance();
     if (isObject() && objectNode().has(prop))
       nextElement = objectNode().get(prop);
     return new Json(nextElement, this, prop);
@@ -185,7 +197,7 @@ public class Json implements Iterable<Json> {
   }
 
   public Json filterFields(BiFunction<String, Json, Boolean> fn, boolean recursive) {
-    return map((k, v) -> fn.apply(k, v) ? v : null, recursive);
+    return map((k, v) -> fn.apply(k, v) ? v : missing(), recursive);
   }
 
   public Json filterFields(String fields) {
@@ -205,9 +217,12 @@ public class Json implements Iterable<Json> {
     if (isArray()) {
       Json json = json();
       for (Json el : this) {
-        if (!el.isNull()) {
-          json.add(recursive ? el.map(fn, true, path) : fn.apply(path, el));
+//        if (!el.isNull()) {
+        Json mapped = recursive ? el.map(fn, true, path) : json(fn.apply(path, el));
+        if (!mapped.isMissing()) {
+          json.add(mapped);
         }
+//        }
       }
       return json;
     }
@@ -216,7 +231,7 @@ public class Json implements Iterable<Json> {
       for (String k : this.keySet()) {
         Json old = get(k);
         Json el = recursive ? old.map(fn, true, path.length() > 0 ? path + "." + k : k) : json(fn.apply(path, old));
-        if (!el.isNull()) {
+        if (!el.isMissing()) {
           json.set(k, el);
         }
       }
@@ -225,20 +240,6 @@ public class Json implements Iterable<Json> {
     return json(fn.apply(path, this));
   }
 
-  public Json update(Json operations) {
-    operations.fields().forEach(opField -> {
-      if ("$set".equals(opField.getKey())) {
-        opField.getValue()
-          .fields()
-          .forEach(setField ->
-            select(setField.getKey())
-              .set(setField.getValue())
-          );
-      }
-    });
-
-    return this;
-  }
 
   public Stream<Map.Entry<String, Json>> fields() {
     return Streams.stream(jsonNode.fields()).map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), new Json(e.getValue(), Json.this, e.getKey())));
@@ -340,7 +341,7 @@ public class Json implements Iterable<Json> {
   }
 
   public String asString(String value) {
-    if(isNumber()) {
+    if (isNumber()) {
       return asNumber(0).toString();
     }
     return isString() ? as(String.class) : value;
