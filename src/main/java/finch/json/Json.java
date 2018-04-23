@@ -57,7 +57,7 @@ public class Json implements Iterable<Json> {
   }
 
   public static Json json(Object o) {
-    if(o instanceof Json) {
+    if (o instanceof Json) {
       return (Json) o;
     }
     return new Json(OBJECT_MAPPER.valueToTree(o));
@@ -134,15 +134,17 @@ public class Json implements Iterable<Json> {
 
   public Json get(int i) {
     JsonNode nextElement = MissingNode.getInstance();
-    if (isArray() && arrayNode().size() > 0)
+    if (isArray() && arrayNode().size() >= i) {
       nextElement = arrayNode().get(i);
+    }
     return new Json(nextElement, this, i);
   }
 
   public Json get(String prop) {
     JsonNode nextElement = MissingNode.getInstance();
-    if (isObject() && objectNode().has(prop))
+    if (isObject() && objectNode().has(prop)) {
       nextElement = objectNode().get(prop);
+    }
     return new Json(nextElement, this, prop);
   }
 
@@ -180,7 +182,7 @@ public class Json implements Iterable<Json> {
       updateElement(OBJECT_MAPPER.createObjectNode());
     }
     JsonNode value1 = valueToTree(value);
-    if(value1.isMissingNode()) {
+    if (value1.isMissingNode()) {
       objectNode().remove(prop);
     } else {
       objectNode().set(prop, value1);
@@ -289,7 +291,7 @@ public class Json implements Iterable<Json> {
   }
 
   public boolean isEmpty() {
-    return isArray() ? arrayNode().size() == 0 : (isObject() ? objectNode().fields().hasNext() : (!isString() || asString().isEmpty()));
+    return isArray() ? arrayNode().size() == 0 : (isObject() ? !objectNode().fields().hasNext() : (!isString() || asString().isEmpty()));
   }
 
 
