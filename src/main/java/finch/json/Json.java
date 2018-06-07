@@ -314,6 +314,12 @@ public class Json implements Iterable<Json> {
   }
 
   @SneakyThrows
+  public <T> T to(T to) {
+    OBJECT_MAPPER.readerForUpdating(to).readValue(jsonNode);
+    return to;
+  }
+
+  @SneakyThrows
   public <T> T as(Class<? super T> type, Class... parameterClasses) {
     if (type.isAssignableFrom(Json.class)) {
       return (T) this;
