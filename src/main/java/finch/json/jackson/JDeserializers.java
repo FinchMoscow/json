@@ -31,7 +31,7 @@ public class JDeserializers extends com.fasterxml.jackson.databind.deser.Deseria
       //ignore
     }
     if (type.isInterface()) {
-      new JsonDeserializer<Object>() {
+      return new JsonDeserializer<Object>() {
         @Override
         public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
           return map(type.getRawClass(), p.readValueAsTree());
@@ -46,9 +46,11 @@ public class JDeserializers extends com.fasterxml.jackson.databind.deser.Deseria
       public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         String property = method.getName().substring(3);
         property = new String(new char[]{property.charAt(0)}).toLowerCase() + property.substring(1);
-
+        if(method.getDeclaringClass().equals(Object.class)) {
+          return method.invoke(data, args);
+        }
         // getter
-        if (method.getName().startsWith("fetchToView") && method.getParameterTypes().length == 0) {
+        if (method.getName().startsWith("get") && method.getParameterTypes().length == 0) {
           return getProperty(data, property, method);
         }
 

@@ -199,6 +199,10 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
+  public Json filterFields(Class type) {
+    return json(as(type));
+  }
+
   public Json filterFields(BiFunction<String, Json, Boolean> fn) {
     return filterFields(fn, true);
   }
