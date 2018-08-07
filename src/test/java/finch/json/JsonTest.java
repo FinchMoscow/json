@@ -1,14 +1,29 @@
 package finch.json;
 
 import org.junit.Test;
+import org.springframework.util.StringUtils;
 
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static finch.json.Json.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class JsonTest {
+  @Test
+  public void changeFieldNameCase() {
+    Json j = json("superWRMLTest-aaa", 1);
+    assertTrue(j.get("superWRMLTest-aaa").isNumber());
+    assertTrue(j.toCamelCase().get("SuperWRMLTestAaa").isNumber());
+    assertTrue(j.toKebabCase().get("super-wrml-test-aaa").isNumber());
+    assertTrue(j.toLowerCamelCase().get("superWRMLTestAaa").isNumber());
+    assertTrue(j.toScreamingSnakeCase().get("SUPER_WRML_TEST_AAA").isNumber());
+    assertTrue(j.toSnakeCase().get("super_wrml_test_aaa").isNumber());
+    assertTrue(j.toTrainCase().get("super-wrml-test-aaa").isNumber());
+  }
+
   @Test
   public void fixStructure() {
     Json json = json()

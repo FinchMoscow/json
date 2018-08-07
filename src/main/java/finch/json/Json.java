@@ -15,9 +15,11 @@ import finch.json.jackson.JDeserialize;
 import finch.json.jackson.JModule;
 import finch.json.jackson.JSerializer;
 import lombok.SneakyThrows;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -370,6 +372,75 @@ public class Json implements Iterable<Json> {
 
   public boolean asBoolean(boolean value) {
     return isBoolean() ? as(Boolean.class) : value;
+  }
+
+  public Json toCamelCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, true, true, false, ""));
+  }
+
+  public Json toLowerCamelCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, false, true, false, ""));
+  }
+  public Json toSnakeCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, false, false, false, "_"));
+  }
+
+  public Json toKebabCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, false, false, false, "-"));
+  }
+
+  public Json toTrainCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, false, false, false, "-"));
+  }
+
+  public Json toScreamingSnakeCase() {
+    return mapFieldNames(s -> changeFieldNameCase(s, false, false, true, "_"));
+  }
+
+  private String changeFieldNameCase(String fieldName, boolean capitalize, boolean camel, boolean upper, String join) {
+    fieldName = Stream.of(fieldName.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_]"))
+      .map(s -> {
+        if (camel) {
+          return StringUtils.capitalize(s);
+        }
+        return s.toLowerCase();
+      })
+      .collect(Collectors.joining(join));
+    if (capitalize) {
+      fieldName = StringUtils.capitalize(fieldName);
+    } else {
+      fieldName = StringUtils.uncapitalize(fieldName);
+    }
+    if (upper) {
+      fieldName = fieldName.toUpperCase();
+    }
+    return fieldName;
+
+  }
+
+  public Json mapFieldNames(Function<String, String> fn) {
+    if (isArray()) {
+      Json json = json();
+      for (Json el : this) {
+        Json mapped = el.mapFieldNames(fn);
+        if (!mapped.isMissing()) {
+          json.add(mapped);
+        }
+      }
+      return json;
+    }
+    if (isObject()) {
+      Json json = json();
+      for (String k : this.keySet()) {
+        Json old = get(k);
+        Json el = old.mapFieldNames(fn);
+        if (!el.isMissing()) {
+          json.set(fn.apply(k), el);
+        }
+      }
+      return json;
+    }
+    return this;
   }
 
   private void updateElement(JsonNode newJsonNode) {
