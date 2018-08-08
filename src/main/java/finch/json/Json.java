@@ -26,11 +26,11 @@ import java.util.stream.Stream;
 @JsonSerialize(using = JSerializer.class)
 @JsonDeserialize(using = JDeserialize.class)
 public class Json implements Iterable<Json> {
-  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
     .registerModule(new JModule())
     .findAndRegisterModules()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-    .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+    .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
     .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
   private final Json parent;
   private final Object path;
