@@ -337,7 +337,7 @@ public class Json implements Iterable<Json> {
   }
 
   public Number asNumber(Number value) {
-    return isNumber() ? as(Number.class) : (isString() ? parseDouble(asString(), value) : null);
+    return isNumber() ? as(Number.class) : (isString() ? parseDouble(asString(), value) : value);
   }
 
 
@@ -381,6 +381,7 @@ public class Json implements Iterable<Json> {
   public Json toLowerCamelCase() {
     return mapFieldNames(s -> changeFieldNameCase(s, false, true, false, ""));
   }
+
   public Json toSnakeCase() {
     return mapFieldNames(s -> changeFieldNameCase(s, false, false, false, "_"));
   }
@@ -443,6 +444,43 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
+  public Json op(Json op) {
+    if (isMissing()) {
+      op.get("$setOnInsert").fields().forEach(e -> select(e.getKey()).set(e.getValue()));
+    }
+    op.get("$set").fields().forEach(e -> select(e.getKey()).set(e.getValue()));
+    op.get("$inc").fields().forEach(e -> {
+      Json select = select(e.getKey());
+      select.set(select.asNumber(0).doubleValue() + e.getValue().asNumber(0).doubleValue());
+    });
+    op.get("$min").fields().forEach(e -> {
+      Json select = select(e.getKey());
+      double old = select.asNumber(0).doubleValue();
+      double value = e.getValue().asNumber(0).doubleValue();
+      if (value < old) {
+        select.set(value);
+      }
+    });
+    op.get("$max").fields().forEach(e -> {
+      Json select = select(e.getKey());
+      double old = select.asNumber(0).doubleValue();
+      double value = e.getValue().asNumber(0).doubleValue();
+      if (value > old) {
+        select.set(value);
+      }
+    });
+    op.get("$mul").fields().forEach(e -> {
+      Json select = select(e.getKey());
+      select.set(select.asNumber(0).doubleValue() * e.getValue().asNumber(0).doubleValue());
+    });
+    op.get("$rename").fields().forEach(e -> {
+      select(e.getValue().asString()).set(select(e.getKey()));
+      select(e.getKey()).set(missing());
+    });
+    op.get("$unset").fields().forEach(e -> select(e.getKey()).set(missing()));
+    return this;
+  }
+
   private void updateElement(JsonNode newJsonNode) {
     if (parent != null) {
       if (path instanceof String) {
@@ -459,6 +497,9 @@ public class Json implements Iterable<Json> {
   private JsonNode valueToTree(Object value) {
     if (value == null) {
       return NullNode.getInstance();
+    }
+    if (value instanceof JsonNode) {
+      return (JsonNode) value;
     }
     if (value instanceof Json) {
       return ((Json) value).jsonNode();
