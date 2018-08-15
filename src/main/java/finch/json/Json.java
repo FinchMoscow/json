@@ -445,7 +445,7 @@ public class Json implements Iterable<Json> {
   }
 
   public Json op(Json op) {
-    if (isMissing()) {
+    if (isMissing() || isNull()) {
       op.get("$setOnInsert").fields().forEach(e -> select(e.getKey()).set(e.getValue()));
     }
     op.get("$set").fields().forEach(e -> select(e.getKey()).set(e.getValue()));
