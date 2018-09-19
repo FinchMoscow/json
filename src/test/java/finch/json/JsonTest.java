@@ -9,9 +9,22 @@ import java.util.stream.Stream;
 
 import static finch.json.Json.json;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class JsonTest {
+
+  @Test
+  public void equalsAndHash() {
+    Json j1 = Json.parse("{\"a\":1, \"b\":{\"c\":null}}");
+    Json j2 = Json.parse("{\"b\":{\"c\":null}, \"a\":1}");
+    Json j3 = Json.parse("{\"b\":{\"c\":null, \"d\":null}, \"a\":1}");
+    assertTrue(j1.equals(j2));
+    assertTrue(j1.hashCode() == j2.hashCode());
+    assertFalse(j1.equals(j3));
+    assertFalse(j1.hashCode() == j3.hashCode());
+  }
+
   @Test
   public void changeFieldNameCase() {
     Json j = json("superWRMLTest-aaa", 1);

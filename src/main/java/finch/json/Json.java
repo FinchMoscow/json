@@ -481,6 +481,19 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Json json = (Json) o;
+    return Objects.equals(jsonNode, json.jsonNode);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(jsonNode);
+  }
+
   private void updateElement(JsonNode newJsonNode) {
     if (parent != null) {
       if (path instanceof String) {
