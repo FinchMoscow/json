@@ -85,7 +85,6 @@ public class JsonTest {
       )
       .set("c", json().add(1).add("a"));
     Json filter = json.filterFields("b.b, a");
-    System.out.println(filter.toPretty());
     assertTrue(filter.get("a").isNumber());
     assertTrue(filter.get("b").get(0).get("a").isMissing());
     assertTrue(filter.get("b").get(0).get("b").isNumber());
