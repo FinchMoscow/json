@@ -15,6 +15,25 @@ import static org.junit.Assert.assertTrue;
 public class JsonTest {
 
   @Test
+  public void removeNulls() {
+    Json json = Json.json()
+      .set("a", null)
+      .set("b", Json.json()
+        .set("a", null)
+      )
+      .set("c", Json.json()
+        .set("a", null)
+        .set("b", 1)
+      );
+    Json removeNulls = json().removeNulls();
+    assertTrue(json.select("b").isObject());
+    assertTrue(json.select("b.a").isNull());
+    assertTrue(json.select("c.a").isNull());
+    assertTrue(removeNulls.select("b").isMissing());
+    assertTrue(removeNulls.select("c.a").isMissing());
+  }
+
+  @Test
   public void equalsAndHash() {
     Json j1 = Json.parse("{\"a\":1, \"b\":{\"c\":null}}");
     Json j2 = Json.parse("{\"b\":{\"c\":null}, \"a\":1}");

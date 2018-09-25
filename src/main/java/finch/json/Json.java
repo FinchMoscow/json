@@ -374,6 +374,10 @@ public class Json implements Iterable<Json> {
     return isBoolean() ? as(Boolean.class) : value;
   }
 
+  public Json removeNulls() {
+    return filterFields((s, json) -> !json.isNull());
+  }
+
   public Json toCamelCase() {
     return mapFieldNames(s -> changeFieldNameCase(s, true, true, false, ""));
   }
