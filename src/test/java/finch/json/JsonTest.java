@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static finch.json.Json.json;
+import static finch.json.Json.parse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -16,28 +17,30 @@ public class JsonTest {
 
   @Test
   public void removeNulls() {
-    Json json = Json.json()
+    Json json = json()
       .set("a", null)
-      .set("b", Json.json()
+      .set("b", json()
         .set("a", null)
       )
-      .set("c", Json.json()
+      .set("c", json()
         .set("a", null)
         .set("b", 1)
       );
-    Json removeNulls = json().removeNulls();
+    Json removeNulls = json.removeNulls();
     assertTrue(json.select("b").isObject());
     assertTrue(json.select("b.a").isNull());
+    assertTrue(json.select("c").isObject());
     assertTrue(json.select("c.a").isNull());
     assertTrue(removeNulls.select("b").isMissing());
+    assertTrue(removeNulls.select("c").isObject());
     assertTrue(removeNulls.select("c.a").isMissing());
   }
 
   @Test
   public void equalsAndHash() {
-    Json j1 = Json.parse("{\"a\":1, \"b\":{\"c\":null}}");
-    Json j2 = Json.parse("{\"b\":{\"c\":null}, \"a\":1}");
-    Json j3 = Json.parse("{\"b\":{\"c\":null, \"d\":null}, \"a\":1}");
+    Json j1 = parse("{\"a\":1, \"b\":{\"c\":null}}");
+    Json j2 = parse("{\"b\":{\"c\":null}, \"a\":1}");
+    Json j3 = parse("{\"b\":{\"c\":null, \"d\":null}, \"a\":1}");
     assertTrue(j1.equals(j2));
     assertTrue(j1.hashCode() == j2.hashCode());
     assertFalse(j1.equals(j3));
