@@ -6,6 +6,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.BufferedInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -18,15 +19,19 @@ public class PathJson {
   @SneakyThrows
   public static Json read(String locationPattern) {
     PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
-    String root = pathMatchingResourcePatternResolver.getResource(locationPattern).getURI().toString();
-    Json json = Json.json();
-    for (Resource resource : pathMatchingResourcePatternResolver.getResources(locationPattern + "/**/*.json")) {
-      String path = jsonPath(root, resource);
+    try {
+      String root = pathMatchingResourcePatternResolver.getResource(locationPattern).getURI().toString();
+      Json json = Json.json();
+      for (Resource resource : pathMatchingResourcePatternResolver.getResources(locationPattern + "/**/*.json")) {
+        String path = jsonPath(root, resource);
 
-      Json value = Json.parse(read(resource.getInputStream()));
-      json.select(path).set(value);
+        Json value = Json.parse(read(resource.getInputStream()));
+        json.select(path).set(value);
+      }
+      return json;
+    } catch (FileNotFoundException exception) {
+      return Json.missing();
     }
-    return json;
   }
 
   private static String jsonPath(String root, Resource resource) throws IOException {

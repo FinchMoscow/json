@@ -118,6 +118,10 @@ public class Json implements Iterable<Json> {
     return jsonNode.isMissingNode();
   }
 
+  public JsonCheck check(Function<Json, Object> fn) {
+    return new JsonCheck(this, fn);
+  }
+
   public Json select(String path) {
     return select((Object[]) path.split("\\."));
   }

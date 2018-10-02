@@ -1,19 +1,21 @@
 package finch.json;
 
 import org.junit.Test;
-import org.springframework.util.StringUtils;
 
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static finch.json.Json.json;
 import static finch.json.Json.parse;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class JsonTest {
+  @Test(expected = IllegalArgumentException.class)
+  public void check() {
+    assertTrue(Json.missing().check(Json::isBoolean).orElse(true).asBoolean());
+    assertFalse(Json.json(false).check(Json::isBoolean).orElseGet(() -> true).asBoolean());
+    assertTrue(Json.json(1).check(Json::isBoolean).orElseMap((j) -> true).asBoolean());
+    Json.missing().check(Json::isBoolean).orElseThrow(IllegalArgumentException::new);
+  }
 
   @Test
   public void removeNulls() {
