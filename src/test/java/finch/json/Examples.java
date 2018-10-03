@@ -58,17 +58,28 @@ public class Examples {
 
   @Test
   public void example() {
-    // filter fields by interface
     Json json = buildJson();
+    // filter fields by interface
     System.out.println(
       json
         .filterFields(PersonProjection.class)
         .toPretty()
     );
-    // query
-    System.out.println(json.get("addresses").get(0).get("street"));
-    System.out.println(json.get("addresses").get(0).get("street1").isNull());
-    System.out.println(json.get("addresses").get(0).get("street1").isMissing());
+    // filter fields by name
+    System.out.println(
+      json
+        .filterFields("name, addresses.street")
+        .toPretty()
+    );
+
+    // query, iterate array
+    for (Json address : json.get("addresses")) {
+      address.isObject();
+      address.get("street");
+      address.get("street").isString();
+      address.get("street1").isNull();
+      address.get("street1").isMissing();
+    }
     // branching
     System.out.println(
       json.get("addresses")
@@ -78,7 +89,7 @@ public class Examples {
             .set("city", "Moscow")
           )
         )
-      .toPretty()
+        .toPretty()
     );
   }
 }
