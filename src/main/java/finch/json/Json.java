@@ -486,6 +486,9 @@ public class Json implements Iterable<Json> {
       select(e.getKey()).set(missing());
     });
     op.get("$unset").fields().forEach(e -> select(e.getKey()).set(missing()));
+    op.get("$push").fields().forEach(o ->
+      Optional.of(select(o.getKey())).filter(Json::isArray).ifPresent(j -> j.add(o.getValue()))
+    );
     return this;
   }
 
