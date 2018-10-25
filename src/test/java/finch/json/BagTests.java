@@ -7,15 +7,10 @@ import org.junit.Test;
 
 public class BagTests {
   @Test
-  public void issue4() {
+  public void issue4() throws JsonProcessingException {
     Json anyJson = Json.json();
     ObjectMapper mapper = new ObjectMapper()
       .enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
-    try {
-      mapper.writeValueAsString(anyJson);
-    } catch (JsonProcessingException expectedError) {
-      expectedError.printStackTrace();
-    }
-
+    mapper.writeValueAsString(anyJson);
   }
 }
