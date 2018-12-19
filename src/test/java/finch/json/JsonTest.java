@@ -115,4 +115,20 @@ public class JsonTest {
   public void castToString() {
     assertEquals("1", json(1).asString());
   }
+
+  @Test
+  public void pushCommand() {
+    Examples.Person person = Examples.Person.builder()
+      .addAddress(new Examples.Address("Baker", "London"))
+      .build();
+
+    Examples.Address secondAddress = new Examples.Address("Lenina", "Moscow");
+
+    Json json = Json.json(person);
+    assertFalse(json.as(Examples.Person.class).getAddresses().contains(secondAddress));
+
+    Json pushJson = Json.json("$push", Json.json("addresses", secondAddress));
+    json.op(pushJson);
+    assertTrue(json.as(Examples.Person.class).getAddresses().contains(secondAddress));
+  }
 }
