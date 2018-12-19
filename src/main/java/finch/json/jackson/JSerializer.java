@@ -2,6 +2,7 @@ package finch.json.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import finch.json.Json;
 import finch.json.ToJson;
 
@@ -15,6 +16,17 @@ public class JSerializer extends com.fasterxml.jackson.databind.JsonSerializer<O
       gen.writeTree(((Json) value).jsonNode());
     } else if (value instanceof ToJson) {
       serialize(((ToJson) value).toJson(), gen, serializers);
+    }
+  }
+
+  @Override
+  public void serializeWithType(Object value, JsonGenerator gen, SerializerProvider serializers, TypeSerializer typeSer) throws IOException {
+    if (value instanceof Json) {
+      gen.writeTree(((Json) value).jsonNode());
+    } else if (value instanceof ToJson) {
+      serialize(((ToJson) value).toJson(), gen, serializers);
+    } else {
+      super.serializeWithType(value, gen, serializers, typeSer);
     }
   }
 }
