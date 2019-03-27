@@ -30,6 +30,7 @@ public class Json implements Iterable<Json> {
     .registerModule(new JModule())
     .findAndRegisterModules()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
     .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
   private final Json parent;
