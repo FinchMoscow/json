@@ -22,7 +22,6 @@ public class JsonCheck {
     return Json.json(value);
   }
 
-
   public Json orElseGet(Supplier<Object> fn) {
     if (check()) {
       return json;

@@ -15,6 +15,7 @@ public class Examples {
   @Builder(toBuilder = true)
   public static class Person {
     private String name;
+    private String phone;
     @Singular("addAddress")
     private List<Address> addresses;
   }

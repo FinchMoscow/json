@@ -17,7 +17,7 @@ public class JDeserializers extends com.fasterxml.jackson.databind.deser.Deseria
     try {
       Constructor<?> constructor = type.getRawClass().getConstructor(Json.class);
 
-      return new JsonDeserializer<Object>() {
+      return new JsonDeserializer<>() {
         @Override
         public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
           try {
@@ -31,7 +31,7 @@ public class JDeserializers extends com.fasterxml.jackson.databind.deser.Deseria
       //ignore
     }
     if (type.isInterface()) {
-      return new JsonDeserializer<Object>() {
+      return new JsonDeserializer<>() {
         @Override
         public Object deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
           return map(type.getRawClass(), p.readValueAsTree());

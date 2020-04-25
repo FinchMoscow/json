@@ -1,7 +1,8 @@
-package finch.json;
+package finch.json.extension;
 
-import com.google.common.collect.Lists;
-import lombok.SneakyThrows;
+import finch.json.Json;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -9,15 +10,27 @@ import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-public class PathJson {
+/**
+ * Be careful to use these methods you must to include spring-core to your classpath.
+ * @see <a href="https://mvnrepository.com/artifact/org.springframework/spring-core">Spring core</a>
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class PathJsonExtension {
+
   private static final int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
   private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  @SneakyThrows
-  public static Json read(String locationPattern) {
+  /**
+   * Scans a classpath and creates a JSON where keys are matched locations and values are read files.
+   * @param locationPattern Ant-style location pattern
+   * @return the JSON with parsed files
+   * @throws IOException
+   */
+  public static Json read(String locationPattern) throws IOException {
     PathMatchingResourcePatternResolver pathMatchingResourcePatternResolver = new PathMatchingResourcePatternResolver();
     try {
       String root = pathMatchingResourcePatternResolver.getResource(locationPattern).getURI().toString();
@@ -32,19 +45,6 @@ public class PathJson {
     } catch (FileNotFoundException exception) {
       return Json.missing();
     }
-  }
-
-  private static String jsonPath(String root, Resource resource) throws IOException {
-    return Lists
-      .newArrayList(
-        resource.getURI().toString()
-          .substring(root.length())
-          .split("\\/")
-      )
-      .stream()
-      .map(s -> s.split("\\.")[0])
-      .filter(s -> s.length() > 0)
-      .collect(Collectors.joining("."));
   }
 
   public static String read(InputStream is) throws IOException {
@@ -72,6 +72,17 @@ public class PathJson {
       }
       buf = Arrays.copyOf(buf, capacity);
     }
-    return new String((capacity == nread) ? buf : Arrays.copyOf(buf, nread), "UTF-8");
+    return new String((capacity == nread) ? buf : Arrays.copyOf(buf, nread), StandardCharsets.UTF_8);
+  }
+
+  private static String jsonPath(String root, Resource resource) throws IOException {
+    return Arrays.stream(
+      resource.getURI().toString()
+        .substring(root.length())
+        .split("/")
+    )
+      .map(s -> s.split("\\.")[0])
+      .filter(s -> s.length() > 0)
+      .collect(Collectors.joining("."));
   }
 }

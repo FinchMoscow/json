@@ -9,6 +9,7 @@ import finch.json.Json;
 import java.io.IOException;
 
 public class JDeserialize extends JsonDeserializer<Json> {
+
   @Override
   public Json deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     return new Json(p.readValueAsTree());
@@ -18,4 +19,5 @@ public class JDeserialize extends JsonDeserializer<Json> {
   public Object deserializeWithType(JsonParser p, DeserializationContext ctxt, TypeDeserializer typeDeserializer) throws IOException {
     return new Json(p.readValueAsTree());
   }
+
 }

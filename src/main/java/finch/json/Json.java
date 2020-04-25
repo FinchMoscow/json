@@ -10,22 +10,25 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.collect.Streams;
 import finch.json.jackson.JDeserialize;
 import finch.json.jackson.JModule;
 import finch.json.jackson.JSerializer;
+import finch.json.utils.StringUtils;
 import lombok.SneakyThrows;
-import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 @JsonSerialize(using = JSerializer.class)
 @JsonDeserialize(using = JDeserialize.class)
 public class Json implements Iterable<Json> {
+
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
     .registerModule(new JModule())
     .findAndRegisterModules()
@@ -33,9 +36,9 @@ public class Json implements Iterable<Json> {
     .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
     .disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS)
     .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);
+
   private final Json parent;
   private final Object path;
-
   private JsonNode jsonNode;
 
   public Json(JsonNode jsonNode) {
@@ -81,10 +84,6 @@ public class Json implements Iterable<Json> {
   @SneakyThrows
   public static Json parse(String json) {
     return new Json(OBJECT_MAPPER.readTree(json));
-  }
-
-  public Json clone() {
-    return json(jsonNode.deepCopy());
   }
 
   public JsonNode jsonNode() {
@@ -183,7 +182,6 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
-
   public Json set(String prop, Object value) {
     if (!isObject()) {
       updateElement(OBJECT_MAPPER.createObjectNode());
@@ -197,7 +195,6 @@ public class Json implements Iterable<Json> {
     return this;
   }
 
-
   public Json add(Object value) {
     if (isArray())
       set(arrayNode().size(), value);
@@ -210,12 +207,12 @@ public class Json implements Iterable<Json> {
     return json(as(type));
   }
 
-  public Json filterFields(BiFunction<String, Json, Boolean> fn) {
+  public Json filterFields(BiPredicate<String, Json> fn) {
     return filterFields(fn, true);
   }
 
-  public Json filterFields(BiFunction<String, Json, Boolean> fn, boolean recursive) {
-    return map((k, v) -> fn.apply(k, v) ? v : missing(), recursive);
+  public Json filterFields(BiPredicate<String, Json> fn, boolean recursive) {
+    return map((k, v) -> fn.test(k, v) ? v : missing(), recursive);
   }
 
   public Json filterFields(String fields) {
@@ -233,40 +230,25 @@ public class Json implements Iterable<Json> {
 
   public Json map(BiFunction<String, Json, Object> fn, boolean recursive, String path) {
     if (isArray()) {
-      Json json = json();
-      for (Json el : this) {
-//        if (!el.isNull()) {
-        Json mapped = recursive ? el.map(fn, true, path) : json(fn.apply(path, el));
-        if (!mapped.isMissing()) {
-          json.add(mapped);
-        }
-//        }
-      }
-      return json;
+      return mapArray(fn, recursive, path);
     }
+
     if (isObject()) {
-      Json json = json();
-      for (String k : this.keySet()) {
-        Json old = get(k);
-        Json el = recursive ? old.map(fn, true, path.length() > 0 ? path + "." + k : k) : json(fn.apply(path, old));
-        if (!el.isMissing()) {
-          json.set(k, el);
-        }
-      }
-      return json;
+      return mapObject(fn, recursive, path);
     }
+
     return json(fn.apply(path, this));
   }
 
-
   public Stream<Map.Entry<String, Json>> fields() {
-    return Streams.stream(jsonNode.fields()).map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), new Json(e.getValue(), Json.this, e.getKey())));
+    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(jsonNode.fields(), 0), false)
+      .map(entry -> new AbstractMap.SimpleEntry<>(entry.getKey(), new Json(entry.getValue(), Json.this, entry.getKey())));
   }
 
   @Override
   public Iterator<Json> iterator() {
     if (isArray()) {
-      return new Iterator<Json>() {
+      return new Iterator<>() {
         private int i = 0;
 
         @Override
@@ -276,7 +258,11 @@ public class Json implements Iterable<Json> {
 
         @Override
         public Json next() {
-          return get(i++);
+          Json json = get(i++);
+          if (json == null) {
+            throw new NoSuchElementException();
+          }
+          return json;
         }
 
         @Override
@@ -285,7 +271,8 @@ public class Json implements Iterable<Json> {
         }
       };
     }
-    return Collections.<Json>emptyList().iterator();
+
+    return Collections.emptyIterator();
   }
 
   public Set<String> keySet() {
@@ -302,16 +289,11 @@ public class Json implements Iterable<Json> {
   }
 
   public boolean isEmpty() {
-    return isArray() ? arrayNode().size() == 0 : (isObject() ? !objectNode().fields().hasNext() : (!isString() || asString().isEmpty()));
-  }
-
-
-  private ArrayNode arrayNode() {
-    return (ArrayNode) jsonNode;
-  }
-
-  private ObjectNode objectNode() {
-    return (ObjectNode) jsonNode;
+    if (isArray()) {
+      return arrayNode().size() == 0;
+    } else {
+      return isObject() ? !objectNode().fields().hasNext() : (!isString() || asString().isEmpty());
+    }
   }
 
   @Override
@@ -325,13 +307,13 @@ public class Json implements Iterable<Json> {
   }
 
   @SneakyThrows
-  public <T> T to(T to) {
-    OBJECT_MAPPER.readerForUpdating(to).readValue(jsonNode);
-    return to;
+  public void updateObject(Object object) {
+    OBJECT_MAPPER.readerForUpdating(object).readValue(jsonNode);
   }
 
   @SneakyThrows
-  public <T> T as(Class<? super T> type, Class... parameterClasses) {
+  @SuppressWarnings("unchecked")
+  public <T> T as(Class<? super T> type, Class<?>... parameterClasses) {
     if (type.isAssignableFrom(Json.class)) {
       return (T) this;
     }
@@ -342,23 +324,32 @@ public class Json implements Iterable<Json> {
   }
 
   public Number asNumber(Number value) {
-    return isNumber() ? as(Number.class) : (isString() ? parseDouble(asString(), value) : value);
+    if (isNumber()) {
+      return as(Number.class);
+    } else {
+      return isString() ? parseDouble(asString(), value) : value;
+    }
   }
-
 
   public int asInt() {
     return asInt(0);
   }
 
   public int asInt(int value) {
-    return isNumber() ? as(Integer.class) : (isString() ? parseInt(asString(), value) : value);
+    if (isNumber()) {
+      return as(Integer.class);
+    } else {
+      return isString() ? parseInt(asString(), value) : value;
+    }
   }
-
 
   public long asLong(long value) {
-    return isNumber() ? as(Long.class) : (isString() ? parseLong(asString(), value) : value);
+    if (isNumber()) {
+      return as(Long.class);
+    } else {
+      return isString() ? parseLong(asString(), value) : value;
+    }
   }
-
 
   public String asString() {
     return asString("");
@@ -369,6 +360,10 @@ public class Json implements Iterable<Json> {
       return asNumber(0).toString();
     }
     return isString() ? as(String.class) : value;
+  }
+
+  public UUID asUUID() throws IllegalArgumentException {
+    return UUID.fromString(asString());
   }
 
   public boolean asBoolean() {
@@ -407,28 +402,7 @@ public class Json implements Iterable<Json> {
     return mapFieldNames(s -> changeFieldNameCase(s, false, false, true, "_"));
   }
 
-  private String changeFieldNameCase(String fieldName, boolean capitalize, boolean camel, boolean upper, String join) {
-    fieldName = Stream.of(fieldName.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_]"))
-      .map(s -> {
-        if (camel) {
-          return StringUtils.capitalize(s);
-        }
-        return s.toLowerCase();
-      })
-      .collect(Collectors.joining(join));
-    if (capitalize) {
-      fieldName = StringUtils.capitalize(fieldName);
-    } else {
-      fieldName = StringUtils.uncapitalize(fieldName);
-    }
-    if (upper) {
-      fieldName = fieldName.toUpperCase();
-    }
-    return fieldName;
-
-  }
-
-  public Json mapFieldNames(Function<String, String> fn) {
+  public Json mapFieldNames(UnaryOperator<String> fn) {
     if (isArray()) {
       Json json = json();
       for (Json el : this) {
@@ -534,7 +508,7 @@ public class Json implements Iterable<Json> {
 
   private int parseInt(String s, int value) {
     try {
-      return Integer.valueOf(s);
+      return Integer.parseInt(s);
     } catch (NumberFormatException ignored) {
       return value;
     }
@@ -542,7 +516,7 @@ public class Json implements Iterable<Json> {
 
   private long parseLong(String s, long value) {
     try {
-      return Long.valueOf(s);
+      return Long.parseLong(s);
     } catch (NumberFormatException ignored) {
       return value;
     }
@@ -550,11 +524,66 @@ public class Json implements Iterable<Json> {
 
   private double parseDouble(String s, Number value) {
     try {
-      return Double.valueOf(s);
+      return Double.parseDouble(s);
     } catch (NumberFormatException ignored) {
       return value.doubleValue();
     }
   }
 
+  private String changeFieldNameCase(String fieldName, boolean capitalize, boolean camel, boolean upper, String join) {
+    fieldName = Stream.of(fieldName.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|[-_]"))
+      .map(s -> {
+        if (camel) {
+          return StringUtils.capitalize(s);
+        }
+        return s.toLowerCase();
+      })
+      .collect(Collectors.joining(join));
+    if (capitalize) {
+      fieldName = StringUtils.capitalize(fieldName);
+    } else {
+      fieldName = StringUtils.unCapitalize(fieldName);
+    }
+    if (upper) {
+      fieldName = fieldName.toUpperCase();
+    }
 
+    return fieldName;
+  }
+
+  private ArrayNode arrayNode() {
+    return (ArrayNode) jsonNode;
+  }
+
+  private ObjectNode objectNode() {
+    return (ObjectNode) jsonNode;
+  }
+
+  private Json mapObject(BiFunction<String, Json, Object> fn, boolean recursive, String path) {
+    Json json = json();
+    for (String k : this.keySet()) {
+      Json old = get(k);
+      Json el;
+      if (recursive) {
+        el = old.map(fn, true, path.length() > 0 ? path + "." + k : k);
+      } else {
+        el = json(fn.apply(path, old));
+      }
+      if (!el.isMissing()) {
+        json.set(k, el);
+      }
+    }
+    return json;
+  }
+
+  private Json mapArray(BiFunction<String, Json, Object> fn, boolean recursive, String path) {
+    Json json = json();
+    for (Json el : this) {
+      Json mapped = recursive ? el.map(fn, true, path) : json(fn.apply(path, el));
+      if (!mapped.isMissing()) {
+        json.add(mapped);
+      }
+    }
+    return json;
+  }
 }
