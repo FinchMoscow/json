@@ -1,6 +1,6 @@
-package finch.json.extension;
+package fm.finch.json.json.extension;
 
-import finch.json.Json;
+import fm.finch.json.json.Json;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.core.io.Resource;

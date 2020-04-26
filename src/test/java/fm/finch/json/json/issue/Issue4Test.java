@@ -1,9 +1,9 @@
-package finch.json.issue;
+package fm.finch.json.json.issue;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import finch.json.Json;
+import fm.finch.json.json.Json;
 import org.junit.Test;
 
 public class Issue4Test {

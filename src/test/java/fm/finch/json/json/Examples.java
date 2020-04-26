@@ -1,12 +1,13 @@
-package finch.json;
+package fm.finch.json.json;
 
+import fm.finch.json.json.Json;
 import lombok.*;
 import org.junit.Test;
 
 import java.util.List;
 
-import static finch.json.Json.array;
-import static finch.json.Json.json;
+import static fm.finch.json.json.Json.array;
+import static fm.finch.json.json.Json.json;
 
 public class Examples {
   @Data

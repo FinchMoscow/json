@@ -1,11 +1,11 @@
-package finch.json.jackson;
+package fm.finch.json.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.POJONode;
-import finch.json.Json;
+import fm.finch.json.json.Json;
 
 import java.io.IOException;
 import java.lang.reflect.*;

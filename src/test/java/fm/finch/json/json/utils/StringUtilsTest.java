@@ -1,5 +1,6 @@
-package finch.json.utils;
+package fm.finch.json.json.utils;
 
+import fm.finch.json.json.utils.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

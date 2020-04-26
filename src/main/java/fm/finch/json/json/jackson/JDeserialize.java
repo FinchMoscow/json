@@ -1,10 +1,10 @@
-package finch.json.jackson;
+package fm.finch.json.json.jackson;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
-import finch.json.Json;
+import fm.finch.json.json.Json;
 
 import java.io.IOException;
 

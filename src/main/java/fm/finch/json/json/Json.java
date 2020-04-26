@@ -1,4 +1,4 @@
-package finch.json;
+package fm.finch.json.json;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,10 +10,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.MissingNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import finch.json.jackson.JDeserialize;
-import finch.json.jackson.JModule;
-import finch.json.jackson.JSerializer;
-import finch.json.utils.StringUtils;
+import fm.finch.json.json.jackson.JDeserialize;
+import fm.finch.json.json.jackson.JModule;
+import fm.finch.json.json.jackson.JSerializer;
+import fm.finch.json.json.utils.StringUtils;
 import lombok.SneakyThrows;
 
 import java.util.*;

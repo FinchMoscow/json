@@ -1,10 +1,10 @@
-package finch.json.jackson;
+package fm.finch.json.json.jackson;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
-import finch.json.Json;
-import finch.json.ToJson;
+import fm.finch.json.json.Json;
+import fm.finch.json.json.ToJson;
 
 import java.io.IOException;
 

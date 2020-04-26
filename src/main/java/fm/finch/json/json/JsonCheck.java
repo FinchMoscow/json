@@ -1,4 +1,4 @@
-package finch.json;
+package fm.finch.json.json;
 
 import lombok.AllArgsConstructor;
 

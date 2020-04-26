@@ -1,4 +1,4 @@
-package finch.json.jackson;
+package fm.finch.json.json.jackson;
 
 import com.fasterxml.jackson.core.Version;
 

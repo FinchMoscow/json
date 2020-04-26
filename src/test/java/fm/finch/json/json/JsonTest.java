@@ -1,12 +1,12 @@
-package finch.json;
+package fm.finch.json.json;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Map;
 
-import static finch.json.Json.json;
-import static finch.json.Json.parse;
+import static fm.finch.json.json.Json.json;
+import static fm.finch.json.json.Json.parse;
 import static org.junit.Assert.*;
 
 public class JsonTest {
