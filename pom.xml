@@ -5,9 +5,49 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>fm.finch</groupId>
-  <artifactId>fm.finch-json</artifactId>
+  <artifactId>finch-json</artifactId>
   <packaging>jar</packaging>
   <version>1.0.0</version>
+
+  <name>${project.groupId}:${project.artifactId}</name>
+  <description>It is a library designed to help you write easier null-safe code when you work with JSON</description>
+  <url>https://github.com/FinchMoscow/json</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <name>Dmitriy Khayretdinov</name>
+      <email>dh@finch-melrose.com</email>
+      <organization>FINCH</organization>
+      <organizationUrl>https://finch.fm/</organizationUrl>
+    </developer>
+
+    <developer>
+      <name>Kirill Astapov</name>
+      <email>aka@finch-melrose.com</email>
+      <organization>FINCH</organization>
+      <organizationUrl>https://finch.fm/</organizationUrl>
+    </developer>
+
+    <developer>
+      <name>Kirill Sobolev</name>
+      <email>sobolev.kirill@finch-melrose.com</email>
+      <organization>FINCH</organization>
+      <organizationUrl>https://finch.fm/</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:git://github.com/FinchMoscow/json.git</connection>
+    <developerConnection>scm:git:ssh://github.com:FinchMoscow/json.git</developerConnection>
+    <url>https://github.com/FinchMoscow/json/tree/master</url>
+  </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,6 +62,49 @@
         <configuration>
           <release>11</release>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
